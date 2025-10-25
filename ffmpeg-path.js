@@ -1,8 +1,8 @@
-import path from 'path';
-import os from 'os';
-import { app } from 'electron';
+const path = require('path');
+const os = require('os');
+const { app } = require('electron');
 
-export function getFfmpegPath() {
+function getFfmpegPath() {
   const platform = os.platform();
 
   // In dev mode, resourcesPath points inside node_modules/electron,
@@ -17,3 +17,5 @@ export function getFfmpegPath() {
     return 'ffmpeg';
   }
 }
+
+module.exports = { getFfmpegPath };

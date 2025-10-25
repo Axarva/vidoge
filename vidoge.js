@@ -1,10 +1,10 @@
-import fs from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
-import { firefox } from 'playwright';
-import { getFfmpegPath } from './ffmpeg-path.js';
+const fs = require('fs'); // Change import to require
+const path = require('path'); // Change import to require
+const { exec } = require('child_process'); // Change import to require
+const { firefox } = require('playwright'); // Change import to require
+const { getFfmpegPath } = require('./ffmpeg-path.js');
 
-export function loadCookiesFromFile(filePath) {
+function loadCookiesFromFile(filePath) {
   if (!fs.existsSync(filePath)) {
     throw new Error(`Cookies file not found: ${filePath}`);
   }
@@ -33,7 +33,7 @@ export function loadCookiesFromFile(filePath) {
   }
 }
 
-export function getOutputFile(lectureUrl, providedName) {
+function getOutputFile(lectureUrl, providedName) {
   let outputFile = providedName;
   if (!outputFile) {
     const urlParts = lectureUrl.split('/');
@@ -53,7 +53,7 @@ export function getOutputFile(lectureUrl, providedName) {
   return newPath;
 }
 
-export async function fetchManifestUrl(lectureUrl, cookies) {
+async function fetchManifestUrl(lectureUrl, cookies) {
   const firefoxExecutable = path.join(process.resourcesPath, 'browsers', 'firefox', 'firefox');
   const browser = await firefox.launch({ executablePath: firefoxExecutable, headless: true });  const context = await browser.newContext();
   const page = await context.newPage();
@@ -76,7 +76,7 @@ export async function fetchManifestUrl(lectureUrl, cookies) {
   return manifestUrl.split('&altManifestMetadata')[0];
 }
 
-export function downloadVideo(manifestUrl, outputFile, onProgress) {
+function downloadVideo(manifestUrl, outputFile, onProgress) {
   const ffmpegPath = getFfmpegPath();
   const ffmpegCmd = `"${ffmpegPath}" -i "${manifestUrl}" -codec copy "${outputFile}"`;
   const proc = exec(ffmpegCmd);
@@ -88,3 +88,10 @@ export function downloadVideo(manifestUrl, outputFile, onProgress) {
     onProgress && onProgress(`Download finished with exit code ${code}`);
   });
 }
+
+module.exports = {
+  loadCookiesFromFile,
+  getOutputFile,
+  fetchManifestUrl,
+  downloadVideo,
+};
