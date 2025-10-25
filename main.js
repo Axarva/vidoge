@@ -16,7 +16,7 @@ async function ensurePlaywrightBrowser() {
 
   let isFirefoxInstalled = false;
 
-  // Check for presence of versioned folder (e.g., 'firefox-1715')
+  // Check for presence of firefox
   if (fs.existsSync(browserDir)) {
     const contents = fs.readdirSync(browserDir);
     isFirefoxInstalled = contents.some(name => name.startsWith('firefox-'));
@@ -35,14 +35,12 @@ async function ensurePlaywrightBrowser() {
     if (result.response === 0) {
       console.log("Downloading Playwright Firefox...");
 
-      // FIX: Execute the bundled Playwright CLI script directly using Node.
-      // This path is relative to your main.js file and works both in dev and packaged modes.
       const playwrightCliPath = path.join(__dirname, 'node_modules', 'playwright', 'cli.js');
       
       const installCmd = `node "${playwrightCliPath}" install firefox`;
       
       await new Promise((resolve, reject) => {
-        // Run the command. Setting cwd is often helpful but may not be strictly necessary here.
+
         const proc = exec(installCmd, (error, stdout, stderr) => {
           if (error) {
             console.error(`Playwright install error: ${stderr}`);
