@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Vidoge GUI</title>
+</head>
+<body>
+  <h2>Vidoge Downloader</h2>
+
+  <div>
+    <label>Lecture URL:</label>
+    <input type="text" id="lectureUrl" style="width: 80%;">
+  </div>
+
+  <div>
+    <label>Cookies File:</label>
+    <input type="text" id="cookiesPath" readonly>
+    <button id="selectCookies">Browse</button>
+  </div>
+
+  <div>
+    <label>Output File:</label>
+    <input type="text" id="outputPath" readonly>
+    <button id="selectOutput">Browse</button>
+  </div>
+
+  <button id="startDownload">Download</button>
+
+  <pre id="log" style="border:1px solid #ccc; height:200px; overflow:auto;"></pre>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
