@@ -1,11 +1,16 @@
+name: Build and Release Vidoge
+
+on:
+  push:
+    tags:
+      - 'v*'
+
 jobs:
   build:
     strategy:
       matrix:
-        # Define the target OS platforms for the runners
         os: [windows-latest, macos-latest]
     
-    # The runner dynamically changes based on the matrix.os variable
     runs-on: ${{ matrix.os }}
     
     permissions:
@@ -21,43 +26,44 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        # Use npm ci for a clean install in the CI environment
         run: npm ci
 
-      - name: Download and Extract FFmpeg Binaries (Cross-Platform)
+      # --- FFmpeg Download Step for macOS ---
+      - name: Download and Extract FFmpeg (macOS)
+        if: runner.os == 'macOS'
         run: |
+          # 1. Define variables
           $DownloadURL = "https://github.com/Axarva/vidoge/releases/download/ffmpeg-binaries/ffmpeg-bundle.zip"
           $ZipFile = "ffmpeg-bundle.zip"
           $TargetDir = "vendor/ffmpeg"
           
-          # 2. Command logic splits based on OS runner
-          if ("${{ matrix.os }}" == "windows-latest") {
-            # Windows (PowerShell) commands
-            $TargetParentDir = "vendor"
-            New-Item -ItemType Directory -Force -Path $TargetParentDir
-            
-            Write-Host "Downloading FFmpeg bundle from $DownloadURL"
-            Invoke-WebRequest -Uri $DownloadURL -OutFile $ZipFile
-            
-            # Extract to 'vendor', creating the 'vendor/ffmpeg' structure
-            Write-Host "Extracting FFmpeg bundle to $TargetParentDir"
-            Expand-Archive -Path $ZipFile -DestinationPath $TargetParentDir -Force
-            
-          } else { # macOS (bash) commands
-            $TargetParentDir = "vendor"
-            mkdir -p $TargetDir # Create vendor/ffmpeg directly
-            
-            echo "Downloading FFmpeg bundle from $DownloadURL"
-            curl -L "$DownloadURL" -o $ZipFile
-            
-            # Extract contents into the pre-created vendor/ffmpeg directory
-            echo "Extracting FFmpeg bundle to $TargetDir"
-            unzip -o $ZipFile -d $TargetDir
-          }
-        shell: ${{ matrix.os == 'windows-latest' && 'pwsh' || 'bash' }}
+          mkdir -p $TargetDir 
+          
+          echo "Downloading FFmpeg bundle from $DownloadURL"
+          curl -L "$DownloadURL" -o $ZipFile
+          
+          echo "Extracting FFmpeg bundle to $TargetDir"
+          unzip -o $ZipFile -d $TargetDir
+        shell: bash
+
+      # --- FFmpeg Download Step for Windows ---
+      - name: Download and Extract FFmpeg (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $DownloadURL = "https://github.com/Axarva/vidoge/releases/download/ffmpeg-binaries/ffmpeg-bundle.zip"
+          $ZipFile = "ffmpeg-bundle.zip"
+          $TargetParentDir = "vendor"
+          
+          New-Item -ItemType Directory -Force -Path $TargetParentDir
+          
+          Write-Host "Downloading FFmpeg bundle from $DownloadURL"
+          Invoke-WebRequest -Uri $DownloadURL -OutFile $ZipFile
+          
+          Write-Host "Extracting FFmpeg bundle to $TargetParentDir"
+          Expand-Archive -Path $ZipFile -DestinationPath $TargetParentDir -Force
+        shell: pwsh # Use PowerShell for Windows
 
       - name: Run electron-builder and Publish
-        # Builds for the respective OS and publishes artifacts to a GitHub Release
         run: npm run dist -- --publish always
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
