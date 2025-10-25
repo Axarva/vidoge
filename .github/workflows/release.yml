@@ -1,3 +1,4 @@
+# .github/workflows/release.yml
 name: Build and Release Vidoge
 
 on:
@@ -6,15 +7,15 @@ on:
       - 'v*'
 
 jobs:
-  build:
+  # Job 1: Build artifacts for both platforms and upload them as temporary artifacts
+  build-artifacts:
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
-    
+        
     runs-on: ${{ matrix.os }}
-    
     permissions:
-      contents: write
+      contents: read # Only needs read permission for checkout and upload-artifact
 
     steps:
       - name: Checkout repository
@@ -32,18 +33,17 @@ jobs:
       - name: Download and Extract FFmpeg (macOS)
         if: runner.os == 'macOS'
         run: |
-          # 1. Define variables
           DOWNLOAD_URL="https://github.com/Axarva/vidoge/releases/download/ffmpeg-binaries/ffmpeg-bundle.zip"
-          ZIPFILE="ffmpeg-bundle.zip"
+          ZIP_FILE="ffmpeg-bundle.zip"
           TARGET_DIR="vendor/ffmpeg"
           
-          mkdir -p $TARGET_DIR
+          mkdir -p $TARGET_DIR 
           
-          echo "Downloading FFmpeg bundle from $DownloadURL"
-          curl -L "$DOWNLOAD_URL" -o $ZIPFILE
+          echo "Downloading FFmpeg bundle from $DOWNLOAD_URL"
+          curl -L "$DOWNLOAD_URL" -o $ZIP_FILE
           
-          echo "Extracting FFmpeg bundle to $TargetDir"
-          unzip -o $ZIPFILE -d $TARGET_DIR
+          echo "Extracting FFmpeg bundle to $TARGET_DIR"
+          unzip -o $ZIP_FILE -d $TARGET_DIR
         shell: bash
 
       # --- FFmpeg Download Step for Windows ---
@@ -61,9 +61,42 @@ jobs:
           
           Write-Host "Extracting FFmpeg bundle to $TargetParentDir"
           Expand-Archive -Path $ZipFile -DestinationPath $TargetParentDir -Force
-        shell: pwsh # Use PowerShell for Windows
+        shell: pwsh
 
-      - name: Run electron-builder and Publish
-        run: npm run dist -- --publish always
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # --- Build Artifacts (DO NOT PUBLISH) ---
+      - name: Build
+        run: npm run dist -- --dir
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidoge-build-${{ matrix.os }}
+          path: dist/${{ matrix.os == 'windows-latest' && 'win-unpacked' || 'mac-unpacked' }}/*
+
+  # Job 2: Release (Waits for builds, downloads all artifacts, and publishes once)
+  release:
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts # Downloads all build outputs into this directory
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }} 
+          files: |
+            artifacts/*/Vidoge-*.exe
+            artifacts/*/Vidoge-*.dmg
+            artifacts/*/Vidoge-*.zip
+            artifacts/*/Vidoge-*.blockmap
+          #draft: true # Creates a draft release for safety, disabled when using GitHub website.
