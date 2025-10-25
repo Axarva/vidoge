@@ -1,17 +1,16 @@
-# .github/workflows/release.yml
-name: Build and Release Vidoge
-
-on:
-  # Trigger the workflow when a tag with the 'v' prefix is pushed (e.g., v1.0.0)
-  push:
-    tags:
-      - 'v*'
-
 jobs:
-  build-windows:
-    # Use a Windows runner for a native build environment
-    runs-on: windows-latest
+  build:
+    strategy:
+      matrix:
+        # Define the target OS platforms for the runners
+        os: [windows-latest, macos-latest]
     
+    # The runner dynamically changes based on the matrix.os variable
+    runs-on: ${{ matrix.os }}
+    
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,38 +18,46 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20 # Use a stable Node.js version
+          node-version: 20
 
       - name: Install dependencies
-        # Use npm ci for a clean install
+        # Use npm ci for a clean install in the CI environment
         run: npm ci
 
-      - name: Download and Extract FFmpeg Binaries
-        # This step fetches the archived FFmpeg binaries from your release asset
+      - name: Download and Extract FFmpeg Binaries (Cross-Platform)
         run: |
-          # 1. Define variables
           $DownloadURL = "https://github.com/Axarva/vidoge/releases/download/ffmpeg-binaries/ffmpeg-bundle.zip"
           $ZipFile = "ffmpeg-bundle.zip"
           $TargetDir = "vendor/ffmpeg"
-
-          # 2. Create the target directory where the FFmpeg binaries are expected
-          New-Item -ItemType Directory -Force -Path $TargetDir
           
-          # 3. Download the zipped FFmpeg bundle
-          Write-Host "Downloading FFmpeg bundle from $DownloadURL"
-          Invoke-WebRequest -Uri $DownloadURL -OutFile $ZipFile
-          
-          # 4. Extract contents into the vendor/ffmpeg directory.
-          # Since you zipped the contents of 'vendor/ffmpeg' (not the folder itself), 
-          # we extract directly into the newly created 'vendor/ffmpeg' directory.
-          Write-Host "Extracting FFmpeg bundle to $TargetDir"
-          Expand-Archive -Path $ZipFile -DestinationPath $TargetDir -Force
+          # 2. Command logic splits based on OS runner
+          if ("${{ matrix.os }}" == "windows-latest") {
+            # Windows (PowerShell) commands
+            $TargetParentDir = "vendor"
+            New-Item -ItemType Directory -Force -Path $TargetParentDir
+            
+            Write-Host "Downloading FFmpeg bundle from $DownloadURL"
+            Invoke-WebRequest -Uri $DownloadURL -OutFile $ZipFile
+            
+            # Extract to 'vendor', creating the 'vendor/ffmpeg' structure
+            Write-Host "Extracting FFmpeg bundle to $TargetParentDir"
+            Expand-Archive -Path $ZipFile -DestinationPath $TargetParentDir -Force
+            
+          } else { # macOS (bash) commands
+            $TargetParentDir = "vendor"
+            mkdir -p $TargetDir # Create vendor/ffmpeg directly
+            
+            echo "Downloading FFmpeg bundle from $DownloadURL"
+            curl -L "$DownloadURL" -o $ZipFile
+            
+            # Extract contents into the pre-created vendor/ffmpeg directory
+            echo "Extracting FFmpeg bundle to $TargetDir"
+            unzip -o $ZipFile -d $TargetDir
+          }
+        shell: ${{ matrix.os == 'windows-latest' && 'pwsh' || 'bash' }}
 
-        shell: pwsh # Use PowerShell (pwsh) for Windows runner commands
-
-      - name: Run electron-builder for Windows and Publish
-        # The `--publish always` flag creates the GitHub Release and uploads the artifacts.
+      - name: Run electron-builder and Publish
+        # Builds for the respective OS and publishes artifacts to a GitHub Release
         run: npm run dist -- --publish always
         env:
-          # This token is automatically provided by GitHub and grants permission to publish the release.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
