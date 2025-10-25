@@ -1,7 +1,7 @@
-# .github/workflows/release.yml
 name: Build and Release Vidoge
 
 on:
+  # Trigger the workflow when a tag with the 'v' prefix is pushed (e.g., v1.1.3)
   push:
     tags:
       - 'v*'
@@ -63,23 +63,26 @@ jobs:
           Expand-Archive -Path $ZipFile -DestinationPath $TargetParentDir -Force
         shell: pwsh
 
-      # --- Build Artifacts (DO NOT PUBLISH) ---
-      - name: Build
-        run: npm run dist -- --dir
-
+      # --- Build Artifacts (PACKAGE, but DO NOT PUBLISH) ---
+      - name: Build Packages (Do not publish)
+        # -p never creates the final .exe, .dmg, and .zip files without publishing them.
+        run: npm run dist -- -p never 
+      
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vidoge-build-${{ matrix.os }}
-          path: dist/${{ matrix.os == 'windows-latest' && 'win-unpacked' || 'mac-unpacked' }}/*
+          # Use a single artifact name for all runners
+          name: vidoge-final-packages 
+          # Upload the entire 'dist' folder which contains all final files
+          path: dist/ 
 
   # Job 2: Release (Waits for builds, downloads all artifacts, and publishes once)
   release:
-    needs: build-artifacts
+    needs: build-artifacts # Runs only after both Windows and macOS builds are done
     runs-on: ubuntu-latest
     
     permissions:
-      contents: write
+      contents: write # Needs write permission to create/update the final release
 
     steps:
       - name: Checkout repository
@@ -88,15 +91,24 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts # Downloads all build outputs into this directory
+          name: vidoge-final-packages 
+          path: packages # Download everything into 'packages'
+
+      - name: Extract Final Installers
+        run: |
+          # Unzip the single downloaded artifact zip file to access the installers
+          cd packages
+          find . -name "*.zip" -exec unzip -o {} \;
+        shell: bash
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
+          # Targets the existing tag name (e.g., v1.1.3)
           tag_name: ${{ github.ref_name }} 
+          # Files are now exposed by the extraction step
           files: |
-            artifacts/*/Vidoge-*.exe
-            artifacts/*/Vidoge-*.dmg
-            artifacts/*/Vidoge-*.zip
-            artifacts/*/Vidoge-*.blockmap
-          #draft: true # Creates a draft release for safety, disabled when using GitHub website.
+            packages/Vidoge-*.exe
+            packages/Vidoge-*.dmg
+            packages/Vidoge-*-mac.zip
+          #draft: true # Creates a draft release for safety
