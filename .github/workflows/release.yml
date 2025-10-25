@@ -33,17 +33,17 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           # 1. Define variables
-          $DownloadURL = "https://github.com/Axarva/vidoge/releases/download/ffmpeg-binaries/ffmpeg-bundle.zip"
-          $ZipFile = "ffmpeg-bundle.zip"
-          $TargetDir = "vendor/ffmpeg"
+          DOWNLOAD_URL="https://github.com/Axarva/vidoge/releases/download/ffmpeg-binaries/ffmpeg-bundle.zip"
+          ZIPFILE="ffmpeg-bundle.zip"
+          TARGET_DIR="vendor/ffmpeg"
           
-          mkdir -p $TargetDir 
+          mkdir -p $TARGET_DIR
           
           echo "Downloading FFmpeg bundle from $DownloadURL"
-          curl -L "$DownloadURL" -o $ZipFile
+          curl -L "$DOWNLOAD_URL" -o $ZIPFILE
           
           echo "Extracting FFmpeg bundle to $TargetDir"
-          unzip -o $ZipFile -d $TargetDir
+          unzip -o $ZIPFILE -d $TARGET_DIR
         shell: bash
 
       # --- FFmpeg Download Step for Windows ---
