@@ -1,6 +1,39 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
-import path from 'path';
-import { loadCookiesFromFile, getOutputFile, fetchManifestUrl, downloadVideo } from './vidoge.js';
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const path = require('path');
+const { loadCookiesFromFile, getOutputFile, fetchManifestUrl, downloadVideo } = require('./vidoge.js');
+
+const { install, browsers } = require("playwright");
+const fs = require("fs");
+
+async function ensurePlaywrightBrowser() {
+  // Location where playwright stores its browsers
+  const browserDir = path.join(app.getPath("userData"), "playwright-browsers");
+
+  // Make playwright use a custom location (so it’s bundled with user data, not node_modules)
+  process.env.PLAYWRIGHT_BROWSERS_PATH = browserDir;
+
+  // Firefox version key (this will depend on your playwright version)
+  const firefoxPath = path.join(browserDir, browsers["firefox"].directoryName);
+
+  // If missing, install it
+  if (!fs.existsSync(firefoxPath)) {
+    const result = await dialog.showMessageBox({
+      type: "info",
+      buttons: ["Download", "Cancel"],
+      defaultId: 0,
+      message: "Playwright Firefox browser not found. Download now?",
+      detail: "This may take a few minutes (about 200MB).",
+    });
+    if (result.response === 0) {
+      console.log("Downloading Playwright Firefox...");
+      await install({ browsers: ["firefox"] });
+      console.log("Firefox installed!");
+    } else {
+      app.quit();
+    }
+  }
+}
+
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -16,7 +49,7 @@ function createWindow() {
   win.loadFile('index.html');
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async() => { await ensurePlaywrightBrowser(); createWindow();});
 
 // IPC handlers
 ipcMain.handle('select-cookies-file', async () => {

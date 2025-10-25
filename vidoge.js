@@ -54,8 +54,8 @@ export function getOutputFile(lectureUrl, providedName) {
 }
 
 export async function fetchManifestUrl(lectureUrl, cookies) {
-  const browser = await firefox.launch({ headless: true });
-  const context = await browser.newContext();
+  const firefoxExecutable = path.join(process.resourcesPath, 'browsers', 'firefox', 'firefox');
+  const browser = await firefox.launch({ executablePath: firefoxExecutable, headless: true });  const context = await browser.newContext();
   const page = await context.newPage();
 
   await context.addCookies(cookies);

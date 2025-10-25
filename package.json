@@ -1,7 +1,10 @@
 {
   "name": "vidoge",
   "version": "1.0.0",
+  "description": "A simple tool to download SharePoint videos",
   "main": "main.js",
+  "author": "Atharva Timsina <timsinaatharva@gmail.com>",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder"
@@ -14,6 +17,12 @@
       "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
       "!**/*.map"
     ],
+  "extraResources": [
+    {
+      "from": "vendor/ffmpeg/",
+      "to": "vendor/ffmpeg",
+      "filter": ["**/*"]
+    }],
     "mac": {
       "target": [
         "dmg",
