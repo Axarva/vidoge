@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           # Use a single artifact name for all runners
-          name: vidoge-final-packages 
+          name: vidoge-final-packages-${{ matrix.os }}
           # Upload the entire 'dist' folder which contains all final files
           path: dist/ 
 
@@ -91,7 +91,7 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: vidoge-final-packages 
+          name: vidoge-final-packages-*
           path: packages # Download everything into 'packages'
 
       - name: Extract Final Installers
@@ -111,4 +111,4 @@ jobs:
             packages/Vidoge-*.exe
             packages/Vidoge-*.dmg
             packages/Vidoge-*-mac.zip
-          #draft: true # Creates a draft release for safety
+          draft: true # Creates a draft release for safety
