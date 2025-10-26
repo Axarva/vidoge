@@ -91,7 +91,6 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: vidoge-final-packages-*
           path: packages # Download everything into 'packages'
 
       - name: Extract Final Installers
@@ -108,7 +107,7 @@ jobs:
           tag_name: ${{ github.ref_name }} 
           # Files are now exposed by the extraction step
           files: |
-            packages/Vidoge-*.exe
-            packages/Vidoge-*.dmg
-            packages/Vidoge-*-mac.zip
+            packages/**/*.exe
+            packages/**/*.dmg
+            packages/**/Vidoge-*-mac.zip
           draft: true # Creates a draft release for safety
