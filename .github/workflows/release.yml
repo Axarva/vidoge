@@ -30,12 +30,12 @@ jobs:
         run: npm ci
 
       - name: Install and Bundle Playwright (macOS)
-              if: runner.os == 'macOS'
-              run: |
-                export PLAYWRIGHT_BROWSERS_PATH="./playwright-browsers-bundle"
-                echo "Installing Playwright Firefox into bundle directory..."
-                npx playwright install firefox
-              shell: bash
+        if: runner.os == 'macOS'
+        run: |
+          export PLAYWRIGHT_BROWSERS_PATH="./playwright-browsers-bundle"
+          echo "Installing Playwright Firefox into bundle directory..."
+          npx playwright install firefox
+        shell: bash
 
       - name: Install and Bundle Playwright (Windows)
         if: runner.os == 'Windows'
