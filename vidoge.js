@@ -4,6 +4,30 @@ const { exec } = require('child_process'); // Change import to require
 const { firefox } = require('playwright'); // Change import to require
 const { getFfmpegPath } = require('./ffmpeg-path.js');
 
+function findPlaywrightExecutable() {
+  // This path points to the folder bundled by electron-builder via extraResources
+  const bundleDir = path.join(process.resourcesPath, 'playwright-browsers-bundle');
+  
+  if (!fs.existsSync(bundleDir)) {
+    throw new Error(`Playwright bundle not found at: ${bundleDir}. Did the CI bundle successfully?`);
+  }
+
+  // Find the versioned folder (e.g., 'firefox-1495')
+  const contents = fs.readdirSync(bundleDir);
+  const versionedFolderName = contents.find(name => name.startsWith('firefox-'));
+
+  if (!versionedFolderName) {
+    throw new Error('Playwright Firefox versioned folder not found in bundle.');
+  }
+
+  // The final executable path structure:
+  // [bundleDir]/[versionedFolderName]/firefox/firefox(.exe)
+  const platformExeName = process.platform === 'win32' ? 'firefox.exe' : 'firefox';
+  
+  return path.join(bundleDir, versionedFolderName, 'firefox', platformExeName);
+}
+
+
 function loadCookiesFromFile(filePath) {
   if (!fs.existsSync(filePath)) {
     throw new Error(`Cookies file not found: ${filePath}`);
@@ -55,8 +79,8 @@ function getOutputFile(lectureUrl, providedName) {
 
 async function fetchManifestUrl(lectureUrl, cookies) {
   // const firefoxExecutable = path.join(process.resourcesPath, 'browsers', 'firefox', 'firefox');
-  const browser = await firefox.launch({ headless: true });  
-  const context = await browser.newContext();
+  const firefoxExecutable = findPlaywrightExecutable();
+  const browser = await firefox.launch({ executablePath: firefoxExecutable, headless: true });
   const page = await context.newPage();
 
   await context.addCookies(cookies);
