@@ -29,16 +29,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Browsers
+      - name: Install and Bundle Playwright (macOS)
+              if: runner.os == 'macOS'
+              run: |
+                export PLAYWRIGHT_BROWSERS_PATH="./playwright-browsers-bundle"
+                echo "Installing Playwright Firefox into bundle directory..."
+                npx playwright install firefox
+              shell: bash
+
+      - name: Install and Bundle Playwright (Windows)
+        if: runner.os == 'Windows'
         run: |
-          if ("${{ runner.os }}" == "Windows") {
-            $Env:PLAYWRIGHT_BROWSERS_PATH="./playwright-browsers-bundle"
-            node node_modules/playwright/cli.js install firefox
-          } else {
-            export PLAYWRIGHT_BROWSERS_PATH="./playwright-browsers-bundle"
-            npx playwright install firefox
-          }
-        shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}  
+          $TargetDir = "./playwright-browsers-bundle"
+          
+          $Env:PLAYWRIGHT_BROWSERS_PATH=$TargetDir
+          Write-Host "Installing Playwright Firefox into bundle directory..."
+          node node_modules/playwright/cli.js install firefox
+        shell: pwsh
 
       # --- FFmpeg Download Step for macOS ---
       - name: Download and Extract FFmpeg (macOS)
