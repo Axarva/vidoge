@@ -1,6 +1,6 @@
 {
   "name": "vidoge",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "A simple tool to download SharePoint videos",
   "main": "main.js",
   "author": "Atharva Timsina <timsinaatharva@gmail.com>",
@@ -22,6 +22,11 @@
     {
       "from": "vendor/ffmpeg/",
       "to": "vendor/ffmpeg",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "playwright-browsers-bundle/",
+      "to": "playwright-browsers-bundle",
       "filter": ["**/*"]
     }],
     "mac": {

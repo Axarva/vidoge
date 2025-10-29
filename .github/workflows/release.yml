@@ -29,6 +29,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright Browsers
+        run: |
+          if ("${{ runner.os }}" == "Windows") {
+            $Env:PLAYWRIGHT_BROWSERS_PATH="./playwright-browsers-bundle"
+            node node_modules/playwright/cli.js install firefox
+          } else {
+            export PLAYWRIGHT_BROWSERS_PATH="./playwright-browsers-bundle"
+            npx playwright install firefox
+          }
+        shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}  
+
       # --- FFmpeg Download Step for macOS ---
       - name: Download and Extract FFmpeg (macOS)
         if: runner.os == 'macOS'
@@ -107,7 +118,7 @@ jobs:
           tag_name: ${{ github.ref_name }} 
           # Files are now exposed by the extraction step
           files: |
-            packages/**/*.exe
-            packages/**/*.dmg
+            packages/**/Vidoge\ Setup*.exe
+            packages/**/Vidoge-*.dmg
             packages/**/Vidoge-*-mac.zip
           draft: true # Creates a draft release for safety

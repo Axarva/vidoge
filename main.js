@@ -7,60 +7,63 @@ const playwright = require("playwright");
 
 const fs = require("fs");
 
-async function ensurePlaywrightBrowser() {
-  // Location where playwright stores its browsers
-  const browserDir = path.join(app.getPath("userData"), "playwright-browsers");
+process.env.PLAYWRIGHT_BROWSERS_PATH = path.join(
+  process.resourcesPath,
+  'playwright-browsers-bundle'
+);
+// async function ensurePlaywrightBrowser() {
+//   // Location where playwright stores its browsers
+//   const browserDir = path.join(app.getPath("userData"), "playwright-browsers");
 
-  // Make playwright use a custom location (so it’s bundled with user data, not node_modules)
-  process.env.PLAYWRIGHT_BROWSERS_PATH = browserDir;
+//   // Make playwright use a custom location (so it’s bundled with user data, not node_modules)
+//   process.env.PLAYWRIGHT_BROWSERS_PATH = browserDir;
 
-  let isFirefoxInstalled = false;
+//   let isFirefoxInstalled = false;
 
-  // Check for presence of firefox
-  if (fs.existsSync(browserDir)) {
-    const contents = fs.readdirSync(browserDir);
-    isFirefoxInstalled = contents.some(name => name.startsWith('firefox-'));
-  }
+//   // Check for presence of firefox
+//   if (fs.existsSync(browserDir)) {
+//     const contents = fs.readdirSync(browserDir);
+//     isFirefoxInstalled = contents.some(name => name.startsWith('firefox-'));
+//   }
 
-  // If missing, install it
-  if (!isFirefoxInstalled) {
-    const result = await dialog.showMessageBox({
-      type: "info",
-      buttons: ["Download", "Cancel"],
-      defaultId: 0,
-      message: "Playwright Firefox browser not found. Download now?",
-      detail: "This may take a few minutes (about 200MB).",
-    });
-    
-    if (result.response === 0) {
-      console.log("Downloading Playwright Firefox...");
+//   //If missing, install it
+//   if (!isFirefoxInstalled) {
+//     const result = await dialog.showMessageBox({
+//       type: "info",
+//       buttons: ["Download", "Cancel"],
+//       defaultId: 0,
+//       message: "Playwright Firefox browser not found. Download now?",
+//       detail: "This may take a few minutes (about 200MB).",
+//     });
+//     if (result.response === 0) {
+//       console.log("Downloading Playwright Firefox...");
 
-      const playwrightCliPath = path.join(__dirname, 'node_modules', 'playwright', 'cli.js');
+//       const playwrightCliPath = path.join(__dirname, 'node_modules', 'playwright', 'cli.js');
       
-      const installCmd = `node "${playwrightCliPath}" install firefox`;
+//       const installCmd = `node "${playwrightCliPath}" install firefox`;
       
-      await new Promise((resolve, reject) => {
+//       await new Promise((resolve, reject) => {
 
-        const proc = exec(installCmd, (error, stdout, stderr) => {
-          if (error) {
-            console.error(`Playwright install error: ${stderr}`);
-            reject(new Error(`Failed to install Firefox: ${error.message}`));
-            return;
-          }
-          resolve();
-        });
+//         const proc = exec(installCmd, (error, stdout, stderr) => {
+//           if (error) {
+//             console.error(`Playwright install error: ${stderr}`);
+//             reject(new Error(`Failed to install Firefox: ${error.message}`));
+//             return;
+//           }
+//           resolve();
+//         });
 
-        // Optional: Pipe output to the console for live feedback
-        proc.stdout.pipe(process.stdout);
-        proc.stderr.pipe(process.stderr);
-      });
+//         // Optional: Pipe output to the console for live feedback
+//         proc.stdout.pipe(process.stdout);
+//         proc.stderr.pipe(process.stderr);
+//       });
       
-      console.log("Firefox installed!");
-    } else {
-      app.quit();
-    }
-  }
-}
+//       console.log("Firefox installed!");
+//     } else {
+//       app.quit();
+//     }
+//   }
+// }
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -76,7 +79,9 @@ function createWindow() {
   win.loadFile('index.html');
 }
 
-app.whenReady().then(async() => { await ensurePlaywrightBrowser(); createWindow();});
+// app.whenReady().then(async() => { await ensurePlaywrightBrowser(); createWindow();});
+app.whenReady().then(createWindow);
+
 
 // IPC handlers
 ipcMain.handle('select-cookies-file', async () => {
