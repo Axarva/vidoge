@@ -81,10 +81,11 @@ async function fetchManifestUrl(lectureUrl, cookies) {
   // const firefoxExecutable = path.join(process.resourcesPath, 'browsers', 'firefox', 'firefox');
   const firefoxExecutable = findPlaywrightExecutable();
   const browser = await firefox.launch({ executablePath: firefoxExecutable, headless: true });
+  const context = await browser.newContext();
   const page = await context.newPage();
 
   await context.addCookies(cookies);
-  await page.goto(lectureUrl, { waitUntil: 'domcontentloaded' });
+  await page.goto(lectureUrl, { waitUntil: 'networkidle' });
 
   let manifestUrl = null;
   try {
